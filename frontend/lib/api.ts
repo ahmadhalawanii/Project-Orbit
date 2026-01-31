@@ -58,6 +58,7 @@ export interface Application {
   status: string;
   current_stage: string;
   role_title?: string | null;
+  cv_file_path?: string | null;
 }
 
 export async function createApplication(
@@ -100,7 +101,30 @@ export async function updateApplication(
   return request<Application>(`/applications/${applicationId}`, {
     method: "PATCH",
     body: JSON.stringify(data),
+  }  );
+}
+
+/** Upload CV for an application (Pluto stage). Accepts PDF, DOC, DOCX. */
+export async function uploadCv(applicationId: string, file: File): Promise<{ cv_file_path: string; has_extracted_text: boolean }> {
+  const url = `${API_BASE}/api/v1/applications/${applicationId}/cv`;
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(url, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail?: string }).detail || res.statusText);
+  }
+  return res.json();
+}
+
+/** URL to download/view CV (for HR or applicant). */
+export function getCvUrl(applicationId: string): string {
+  const base = API_BASE.replace(/\/$/, "");
+  return `${base}/api/v1/applications/${applicationId}/cv`;
 }
 
 // Portfolio (recruiter)

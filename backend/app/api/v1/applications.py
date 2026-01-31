@@ -22,6 +22,7 @@ class ApplicationRead(BaseModel):
     status: str
     current_stage: str
     role_title: str | None
+    cv_file_path: str | None = None
 
     class Config:
         from_attributes = True

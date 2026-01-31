@@ -11,6 +11,7 @@ import {
   addEvidence,
   getScore,
   calculateScore,
+  getCvUrl,
 } from "@/lib/api";
 import type { Application, Portfolio as PortfolioType, Evidence, RubricScore } from "@/lib/api";
 
@@ -133,6 +134,24 @@ export default function RecruiterApplicationPage() {
             Stage: {STAGE_LABELS[app.current_stage] ?? app.current_stage} · Status: {app.status}
           </p>
         </div>
+
+        {/* CV */}
+        {app.cv_file_path && (
+          <section className="mb-8 rounded-xl border border-[#e8e6e3]/20 bg-[#1e1b4b]/30 p-6">
+            <h2 className="text-lg font-semibold text-[#22d3ee] mb-3">CV</h2>
+            <p className="text-[#e8e6e3]/70 text-sm mb-3">
+              Applicant uploaded their CV in Pluto (The Gate). You can use it for context; AI can use it for later interview steps.
+            </p>
+            <a
+              href={getCvUrl(applicationId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#6366f1] text-white text-sm font-medium hover:bg-[#6366f1]/90 transition"
+            >
+              View / Download CV
+            </a>
+          </section>
+        )}
 
         {/* Portfolio */}
         <section className="mb-8 rounded-xl border border-[#e8e6e3]/20 bg-[#1e1b4b]/30 p-6">

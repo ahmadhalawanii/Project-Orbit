@@ -35,6 +35,8 @@ class Application(Base):
     status = Column(String(64), default="draft")
     current_stage = Column(String(64), default="pluto")
     role_title = Column(String(255), nullable=True)
+    cv_file_path = Column(String(512), nullable=True)
+    cv_extracted_text = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

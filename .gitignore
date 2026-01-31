@@ -24,6 +24,10 @@ dist/
 chroma_db/
 data/
 
+# uploaded CVs (backend)
+backend/uploads/
+uploads/
+
 # os/editor
 .DS_Store
 .idea/
