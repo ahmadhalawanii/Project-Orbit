@@ -1,17 +1,24 @@
 # Project Orbit
 
-Prototype for a conversational candidate/new-hire guide with RAG, Living Portfolio, Mission Packs, and AI interview.
+Space-themed conversational hiring experience with RAG, Living Portfolio, Mission Packs, and AI interview.
 
 ## Stack
-- Web: Next.js (App Router) + Tailwind
-- API: FastAPI (Python)
-- DB: SQLite
-- Vector: Chroma (PersistentClient)
+- **Frontend:** Next.js (App Router) + Tailwind
+- **Backend:** FastAPI (Python)
+- **DB:** SQLite (local)
+- **Vector:** Chroma (PersistentClient)
 
-## Local setup
-1) Copy `.env.example` to `.env` and fill values.
+## Repo layout
+- `ahmeds-code/` contains the integrated AI agent backend + UI used by `docker-compose.yml`.
+- `apps/web/` contains an additional UI demo.
+
+## Quick start (Docker)
+1) Copy `.env.example` to `.env` and fill values if needed.
 2) Start services:
    - `docker compose up --build`
+
+- API: http://localhost:8000  
+- Web: http://localhost:3000  
 
 ## Local dev (optional)
 Backend:
@@ -26,9 +33,5 @@ Frontend:
 - `npm install`
 - `npm run dev -- --hostname 0.0.0.0 --port 3000`
 
-## Verify
-1) Ingest content:
-   - `curl -X POST http://localhost:8000/ingest`
-2) Chat:
-   - `curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"user_id\":\"u1\",\"conversation_id\":\"c1\",\"mode\":\"explore\",\"message\":\"What are the role families?\"}"`
-
+## Secrets
+- Never commit `.env`. Use `.env.example` as a template.
