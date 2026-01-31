@@ -1,28 +1,10 @@
-# secrets
 .env
-.env.*
-
-# python
-__pycache__/
-*.pyc
-.venv/
-venv/
-*.egg-info/
-
-# node / next
-node_modules/
-.next/
-out/
-dist/
-
-# local databases / vector stores
-*.db
-*.sqlite
-*.sqlite3
-chroma_db/
 data/
-
-# os/editor
-.DS_Store
-.idea/
-.vscode/
+friend-repo/
+friend-repo-src/
+ahmeds-code/frontend/node_modules/
+ahmeds-code/frontend/.next/
+apps/web/node_modules/
+apps/web/.next/
+**/__pycache__/
+**/*.pyc

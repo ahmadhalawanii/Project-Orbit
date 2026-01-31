@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./ahmeds-code/backend
+    env_file: .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/friend-orbit.db
+      - CHROMA_PATH=/app/data/chroma
+      - CONTENT_PACK_PATH=/app/content_pack
+    volumes:
+      - ./data:/app/data
+      - ./content_pack:/app/content_pack
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./ahmeds-code/frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
