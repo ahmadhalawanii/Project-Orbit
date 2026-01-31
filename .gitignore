@@ -1,6 +1,8 @@
-# secrets
+# secrets (keep .env.example as tracked template)
 .env
 .env.*
+!.env.example
+!backend/.env.example
 
 # python
 __pycache__/
