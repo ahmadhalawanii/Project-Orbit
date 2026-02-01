@@ -101,7 +101,7 @@ export async function updateApplication(
   return request<Application>(`/applications/${applicationId}`, {
     method: "PATCH",
     body: JSON.stringify(data),
-  }  );
+  });
 }
 
 /** Upload CV for an application (Pluto stage). Accepts PDF, DOC, DOCX. */
@@ -125,6 +125,44 @@ export async function uploadCv(applicationId: string, file: File): Promise<{ cv_
 export function getCvUrl(applicationId: string): string {
   const base = API_BASE.replace(/\/$/, "");
   return `${base}/api/v1/applications/${applicationId}/cv`;
+}
+
+export interface ConversationMessage {
+  role: string;
+  content: string;
+}
+
+export async function appendConversationMessages(
+  applicationId: string,
+  messages: ConversationMessage[]
+) {
+  return request<{ id: string; application_id: string; messages_json: ConversationMessage[] }>(
+    `/applications/${applicationId}/conversation`,
+    {
+      method: "POST",
+      body: JSON.stringify({ messages }),
+    }
+  );
+}
+
+export interface ChatCitation {
+  doc_id: string;
+  title: string;
+  chunk_id: string;
+  snippet: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  citations: ChatCitation[];
+  followups: string[];
+}
+
+export async function sendChat(applicationId: string, message: string) {
+  return request<ChatResponse>("/chat", {
+    method: "POST",
+    body: JSON.stringify({ application_id: applicationId, message }),
+  });
 }
 
 // Portfolio (recruiter)

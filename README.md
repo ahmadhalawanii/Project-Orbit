@@ -9,7 +9,8 @@ Space-themed conversational hiring experience with RAG, Living Portfolio, Missio
 - **Vector:** Chroma (PersistentClient)
 
 ## Repo layout
-- `ahmeds-code/` contains the integrated AI agent backend + UI used by `docker-compose.yml`.
+- `frontend/` contains the living-portfolio UI (used by `docker-compose.yml`).
+- `backend/` contains the integrated AI agent backend.
 - `apps/web/` contains an additional UI demo.
 
 ## Quick start (Docker)
@@ -17,8 +18,8 @@ Space-themed conversational hiring experience with RAG, Living Portfolio, Missio
 2) Start services:
    - `docker compose up --build`
 
-- API: http://localhost:8000  
-- Web: http://localhost:3000  
+- API: http://localhost:8001  
+- Web: http://localhost:3001  
 
 ## Local dev (optional)
 Backend:

@@ -4,8 +4,10 @@ import random
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
-from app.db.models import Application, RubricScore
+from app.db.models import Application, Conversation, Evidence, RubricScore
 from app.api.deps import AsyncDb
+from app.ai import score_application
+from app.config import get_settings
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/applications", tags=["rubric"])
@@ -35,6 +37,24 @@ DEFAULT_CRITERIA = [
     {"name": "Communication", "max": 10},
     {"name": "Overall fit", "max": 10},
 ]
+
+
+def _normalize_scores(
+    scores: list[dict] | None,
+    template: list[dict],
+) -> list[dict]:
+    if not scores:
+        return []
+    normalized = []
+    template_map = {t["name"]: t["max"] for t in template}
+    for item in scores:
+        name = item.get("name")
+        score = item.get("score")
+        max_score = item.get("max") or template_map.get(name, 10)
+        if name is None or score is None:
+            continue
+        normalized.append({"name": name, "score": int(score), "max": int(max_score)})
+    return normalized
 
 
 @router.get("/{application_id}/score", response_model=RubricScoreRead)
@@ -69,17 +89,47 @@ async def calculate_score(application_id: str, db: AsyncDb):
                 scored_at=existing.scored_at,
             )
 
-        random.seed(hash(application_id) % (2**32))
-        criteria_scores = []
-        total = 0
-        total_max = 0
-        for c in DEFAULT_CRITERIA:
-            s = random.randint(4, c["max"])
-            criteria_scores.append({"name": c["name"], "score": s, "max": c["max"]})
-            total += s
-            total_max += c["max"]
-        pct = round(100 * total / total_max) if total_max else 0
-        overall_score = f"{pct}%"
+        conv_result = await db.execute(
+            select(Conversation).where(Conversation.application_id == application_id)
+        )
+        conv = conv_result.scalar_one_or_none()
+        messages = (conv.messages_json or []) if conv else []
+
+        evidence_result = await db.execute(
+            select(Evidence).where(Evidence.application_id == application_id)
+        )
+        evidence_rows = evidence_result.scalars().all()
+        evidence_links = [
+            {"kind": e.kind, "title": e.title, "url_or_path": e.url_or_path}
+            for e in evidence_rows
+        ]
+
+        settings = get_settings()
+        ai_result = score_application(
+            evidence_links,
+            messages,
+            openai_api_key=settings.openai_api_key,
+            mock_ai=settings.mock_ai,
+            criteria_template=DEFAULT_CRITERIA,
+        )
+        criteria_scores = _normalize_scores(
+            ai_result.get("criteria_scores"),
+            DEFAULT_CRITERIA,
+        )
+        overall_score = ai_result.get("overall_score")
+
+        if not criteria_scores or not overall_score:
+            random.seed(hash(application_id) % (2**32))
+            criteria_scores = []
+            total = 0
+            total_max = 0
+            for c in DEFAULT_CRITERIA:
+                s = random.randint(4, c["max"])
+                criteria_scores.append({"name": c["name"], "score": s, "max": c["max"]})
+                total += s
+                total_max += c["max"]
+            pct = round(100 * total / total_max) if total_max else 0
+            overall_score = f"{pct}%"
 
         rubric = RubricScore(
             id=str(uuid.uuid4()),

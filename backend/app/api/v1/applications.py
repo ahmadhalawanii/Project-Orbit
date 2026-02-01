@@ -113,3 +113,38 @@ async def update_application(application_id: str, body: ApplicationUpdate, db: A
     await db.flush()
     await db.refresh(app)
     return app
+
+
+class ConversationMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ConversationAppend(BaseModel):
+    messages: list[ConversationMessage]
+
+
+class ConversationRead(BaseModel):
+    id: str
+    application_id: str
+    messages_json: list[dict]
+
+    class Config:
+        from_attributes = True
+
+
+@router.post("/{application_id}/conversation", response_model=ConversationRead)
+async def append_conversation(application_id: str, body: ConversationAppend, db: AsyncDb):
+    conv_result = await db.execute(
+        select(Conversation).where(Conversation.application_id == application_id)
+    )
+    conv = conv_result.scalar_one_or_none()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    existing = conv.messages_json or []
+    append_items = [m.model_dump() for m in body.messages]
+    conv.messages_json = existing + append_items
+    await db.flush()
+    await db.refresh(conv)
+    return conv

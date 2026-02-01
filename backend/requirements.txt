@@ -10,3 +10,5 @@ greenlet>=3.0
 python-jose[cryptography]>=3.3.0
 pypdf>=4.0.0
 python-multipart>=0.0.6
+openai
+chromadb

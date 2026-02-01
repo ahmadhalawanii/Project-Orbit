@@ -3,7 +3,8 @@
 import { useState, useRef } from "react";
 import { uploadCv } from "@/lib/api";
 
-const ACCEPT = ".pdf,.doc,.docx";
+const ACCEPT =
+  "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx";
 const MAX_SIZE_MB = 10;
 
 interface PlutoStageProps {
@@ -18,11 +19,13 @@ export function PlutoStage({ applicationId, hasCv, onCvUploaded, onComplete }: P
   const [aiNotice, setAiNotice] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSelectedName(file.name);
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       setUploadError(`File must be under ${MAX_SIZE_MB} MB`);
       return;
@@ -80,6 +83,7 @@ export function PlutoStage({ applicationId, hasCv, onCvUploaded, onComplete }: P
             />
             <button
               type="button"
+              onMouseDown={() => setSelectedName(null)}
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               className="px-4 py-2 rounded-lg border border-[#e8e6e3]/40 text-[#e8e6e3] text-sm font-medium hover:bg-[#e8e6e3]/10 disabled:opacity-50 transition"
@@ -87,6 +91,9 @@ export function PlutoStage({ applicationId, hasCv, onCvUploaded, onComplete }: P
               {uploading ? "Uploading…" : "Choose file"}
             </button>
           </div>
+        )}
+        {selectedName && !hasCv && !uploading && (
+          <p className="text-xs text-[#e8e6e3]/70">Selected: {selectedName}</p>
         )}
         {uploadError && (
           <p className="text-sm text-[#f97316]">{uploadError}</p>

@@ -11,8 +11,9 @@ def init_db_and_seed() -> None:
     engine = create_engine(settings.get_database_url_sync(), connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
     with Session(engine) as session:
-        existing = session.execute(select(MissionPack)).scalar_one_or_none()
-        if existing:
+        # If any mission pack exists, skip seeding.
+        existing = session.execute(select(MissionPack.id).limit(1)).first()
+        if existing is not None:
             return
         packs = [
             MissionPack(
