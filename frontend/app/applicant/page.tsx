@@ -27,10 +27,13 @@ export default function ApplicantPage() {
         setPacks(data);
         setLoadError(null);
       })
-      .catch(() => {
+      .catch((e) => {
         setPacks([]);
+        const msg = e instanceof Error ? e.message : "Load failed";
         setLoadError(
-          "Couldn't load mission packs. Is the API running? Start the backend: cd backend && source .venv/bin/activate && python -m uvicorn app.main:app --reload --port 8000"
+          msg.includes("fetch") || msg === "Load failed"
+            ? "Load failed. Is the backend running? Start it with: cd backend && python -m uvicorn app.main:app --reload --port 8000"
+            : msg
         );
       })
       .finally(() => setLoading(false));
@@ -60,7 +63,16 @@ export default function ApplicantPage() {
       const app = await createApplication(applicantId, selectedPack.id, selectedPack.name);
       router.push(`/applicant/${app.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      const msg = e instanceof Error ? e.message : "Something went wrong.";
+      const isNetworkError =
+        msg === "Load failed" ||
+        msg === "Failed to fetch" ||
+        msg.toLowerCase().includes("network");
+      setError(
+        isNetworkError
+          ? "Couldn't reach the server. Is the backend running? Start it with: cd backend && python -m uvicorn app.main:app --reload --port 8000"
+          : msg
+      );
     }
   }
 

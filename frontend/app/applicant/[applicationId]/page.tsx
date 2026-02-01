@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { PlanetStepper } from "@/components/space-map/PlanetStepper";
@@ -13,7 +13,7 @@ import { MarsStage } from "@/components/applicant/stages/MarsStage";
 import { SaturnStage } from "@/components/applicant/stages/SaturnStage";
 import { EarthStage } from "@/components/applicant/stages/EarthStage";
 import { getApplication, updateApplication } from "@/lib/api";
-import { SPACE_STAGES, getNextStage, getStageById, normalizeStageId } from "@/lib/space-stages";
+import { SPACE_STAGES, getNextStage, getPrevStage, getStageById, normalizeStageId } from "@/lib/space-stages";
 import { usePlanetTransition } from "@/hooks/usePlanetTransition";
 import { cn } from "@/lib/utils";
 import type { Application } from "@/lib/api";
@@ -31,8 +31,13 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+const STAGE_QUERY = "stage";
+
 export default function ApplicantApplicationPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const applicationId = params.applicationId as string;
   const [app, setApp] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,26 +52,38 @@ export default function ApplicantApplicationPage() {
 
   const rawStage = app?.current_stage;
   const currentStageId = rawStage ? (normalizeStageId(rawStage) as StageId) : "pluto";
-  const currentStageIndex = SPACE_STAGES.findIndex((s) => s.id === currentStageId);
-  const safeStageIndex = currentStageIndex >= 0 ? currentStageIndex : 0;
+  const urlStageId = searchParams.get(STAGE_QUERY);
+  /** Use URL as source of truth for "where we are" so transition always starts from the planet we're viewing, not stale server state. */
+  const effectiveStageId = (urlStageId && SPACE_STAGES.some((s) => s.id === normalizeStageId(urlStageId)))
+    ? (normalizeStageId(urlStageId) as StageId)
+    : currentStageId;
+  const effectiveStageIndex = Math.max(0, SPACE_STAGES.findIndex((s) => s.id === effectiveStageId));
 
   const {
     displayIndex,
+    toStageIndex,
     transitionProgress,
     isTransitioning,
     uiVisible,
     startTransition,
-  } = usePlanetTransition({ currentStageIndex: safeStageIndex, reducedMotion });
+  } = usePlanetTransition({ currentStageIndex: effectiveStageIndex, reducedMotion });
 
   useEffect(() => {
+    let cancelled = false;
     getApplication(applicationId)
       .then((data) => {
+        if (cancelled) return;
         setApp(data);
         setError(null);
+        if (!searchParams.get(STAGE_QUERY)) {
+          const stageId = normalizeStageId(data.current_stage);
+          router.replace(`${pathname}?${STAGE_QUERY}=${stageId}`, { scroll: false });
+        }
       })
-      .catch(() => setError("Could not load application."))
-      .finally(() => setLoading(false));
-  }, [applicationId]);
+      .catch(() => { if (!cancelled) setError("Could not load application."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [applicationId, pathname, router, searchParams]);
 
   function handleStageComplete() {
     if (!app) return;
@@ -75,7 +92,9 @@ export default function ApplicantApplicationPage() {
     if (!next) return;
     const nextIndex = SPACE_STAGES.findIndex((s) => s.id === next);
     if (nextIndex < 0) return;
-    startTransition(nextIndex, () => {
+    if (isTransitioning && toStageIndex === nextIndex) return;
+    // Pass explicit from index so animation always starts from the planet we're viewing
+    startTransition(effectiveStageIndex, nextIndex, () => {
       updateApplication(applicationId, { current_stage: next })
         .then((updated) => {
           setApp(updated);
@@ -83,6 +102,27 @@ export default function ApplicantApplicationPage() {
         })
         .catch(() => setError("Failed to save progress."));
     });
+    router.replace(`${pathname}?${STAGE_QUERY}=${next}`, { scroll: false });
+  }
+
+  function handleGoBack() {
+    if (!app) return;
+    const currentId = normalizeStageId(app.current_stage) as StageId;
+    const prev = getPrevStage(currentId);
+    if (!prev) return;
+    const prevIndex = SPACE_STAGES.findIndex((s) => s.id === prev);
+    if (prevIndex < 0) return;
+    if (isTransitioning && toStageIndex === prevIndex) return;
+    // Pass explicit from index so animation always starts from the planet we're viewing
+    startTransition(effectiveStageIndex, prevIndex, () => {
+      updateApplication(applicationId, { current_stage: prev })
+        .then((updated) => {
+          setApp(updated);
+          setCardKey((k) => k + 1);
+        })
+        .catch(() => setError("Failed to go back."));
+    });
+    router.replace(`${pathname}?${STAGE_QUERY}=${prev}`, { scroll: false });
   }
 
   if (loading) {
@@ -106,22 +146,27 @@ export default function ApplicantApplicationPage() {
     );
   }
 
+  const displayStageId = effectiveStageId;
+  const displayStageIndex = effectiveStageIndex;
   const completedStageIds = SPACE_STAGES.filter(
-    (s) => s.order < (SPACE_STAGES.find((x) => x.id === currentStageId)?.order ?? 0)
+    (s) => s.order < (SPACE_STAGES.find((x) => x.id === displayStageId)?.order ?? 0)
   ).map((s) => s.id);
-  const stageConfig = getStageById(currentStageId);
+  const stageConfig = getStageById(displayStageId);
 
   return (
     <main className="min-h-screen relative overflow-hidden">
       {/* 3D hero POV: only mount on client (avoids SSR/Node loading three.js) */}
       {mounted && (
-        <div className="absolute inset-0 z-0">
-          <PlanetScene3DDynamic
-            currentStageIndex={displayIndex}
-            transitionProgress={transitionProgress}
-            reducedMotion={reducedMotion}
-          />
-        </div>
+        <>
+          <div className="absolute inset-0 z-0">
+            <PlanetScene3DDynamic
+              currentStageIndex={isTransitioning ? displayIndex : displayStageIndex}
+              toStageIndex={isTransitioning ? toStageIndex : displayStageIndex}
+              transitionProgress={transitionProgress}
+              reducedMotion={reducedMotion}
+            />
+          </div>
+        </>
       )}
 
       {/* Star-streak / warp overlay during fly-through (middle of transition) */}
@@ -140,10 +185,10 @@ export default function ApplicantApplicationPage() {
           className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none transition-opacity duration-300"
           role="status"
           aria-live="polite"
-          aria-label={`Traveling to ${SPACE_STAGES[displayIndex + 1]?.travelLabel ?? ""}`}
+          aria-label={`Traveling to ${SPACE_STAGES[toStageIndex]?.travelLabel ?? ""}`}
         >
           <p className="text-[#e8e6e3]/90 text-lg font-medium bg-[#0a0a0f]/60 px-4 py-2 rounded-lg">
-            Traveling to {SPACE_STAGES[displayIndex + 1]?.name ?? "next planet"}…
+            Traveling to {SPACE_STAGES[toStageIndex]?.name ?? "planet"}…
           </p>
         </div>
       )}
@@ -167,9 +212,9 @@ export default function ApplicantApplicationPage() {
           </header>
 
           <PlanetStepper
-            currentStageId={currentStageId}
+            currentStageId={displayStageId}
             completedStageIds={completedStageIds}
-            transitionFromIndex={null}
+            transitionFromIndex={isTransitioning ? displayIndex : null}
             className="mb-6 sm:mb-8"
           />
 
@@ -181,22 +226,41 @@ export default function ApplicantApplicationPage() {
               entering
               reducedMotion={reducedMotion}
             >
-              {currentStageId === "pluto" && (
-                <PlutoStage applicationId={applicationId} onComplete={handleStageComplete} />
+              {getPrevStage(displayStageId) && (
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={handleGoBack}
+                    className="text-sm text-[#e8e6e3]/80 hover:text-[#22d3ee] hover:underline"
+                  >
+                    ← Go back to {SPACE_STAGES.find((s) => s.id === getPrevStage(displayStageId))?.name ?? "previous phase"}
+                  </button>
+                </div>
               )}
-              {currentStageId === "mercury" && (
+              {displayStageId === "pluto" && (
+                <PlutoStage
+                  applicationId={applicationId}
+                  hasCv={!!app?.cv_file_path}
+                  onCvUploaded={async () => {
+                    const a = await getApplication(applicationId);
+                    setApp(a);
+                  }}
+                  onComplete={handleStageComplete}
+                />
+              )}
+              {displayStageId === "mercury" && (
                 <MercuryStage applicationId={applicationId} onComplete={handleStageComplete} />
               )}
-              {currentStageId === "asteroid_belt" && (
+              {displayStageId === "asteroid_belt" && (
                 <AsteroidBeltStage applicationId={applicationId} onComplete={handleStageComplete} />
               )}
-              {currentStageId === "mars" && (
+              {displayStageId === "mars" && (
                 <MarsStage applicationId={applicationId} onComplete={handleStageComplete} />
               )}
-              {currentStageId === "saturn" && (
+              {displayStageId === "saturn" && (
                 <SaturnStage applicationId={applicationId} onComplete={handleStageComplete} />
               )}
-              {currentStageId === "earth" && (
+              {displayStageId === "earth" && (
                 <EarthStage applicationId={applicationId} onComplete={handleStageComplete} />
               )}
             </StageCard>

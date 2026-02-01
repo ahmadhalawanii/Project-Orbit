@@ -33,3 +33,12 @@ apps/web/node_modules/
 apps/web/.next/
 **/__pycache__/
 **/*.pyc
+
+# uploaded CVs (backend)
+backend/uploads/
+uploads/
+
+# os/editor
+.DS_Store
+.idea/
+.vscode/

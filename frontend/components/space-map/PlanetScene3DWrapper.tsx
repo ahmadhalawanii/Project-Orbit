@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 /** Props for 3D scene - defined here so server never imports PlanetScene3D (three.js/R3F). */
 export interface PlanetScene3DProps {
   currentStageIndex: number;
+  toStageIndex: number;
   transitionProgress: number;
   reducedMotion: boolean;
   className?: string;
