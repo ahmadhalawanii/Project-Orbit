@@ -157,3 +157,88 @@ body {
   pointer-events: none;
 }
 
+/* Home hero: animated space gradient */
+.space-hero {
+  position: relative;
+  min-height: 100vh;
+  background: radial-gradient(60% 60% at 20% 20%, rgba(99, 102, 241, 0.25), transparent 55%),
+    radial-gradient(50% 60% at 80% 30%, rgba(34, 211, 238, 0.2), transparent 60%),
+    linear-gradient(160deg, #05040a 0%, #0b1120 40%, #1e1b4b 80%, #0a0a0f 100%);
+  background-size: 200% 200%;
+  animation: space-gradient 18s ease-in-out infinite;
+}
+
+.space-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(1.5px 1.5px at 20px 30px, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 90px 120px, rgba(255,255,255,0.25), transparent),
+    radial-gradient(2px 2px at 160px 70px, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 240px 160px, rgba(255,255,255,0.2), transparent);
+  background-size: 260px 260px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.space-hero::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12), transparent 60%);
+  filter: blur(30px);
+  animation: space-glow 10s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes space-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes space-glow {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.7; }
+  50% { transform: translate3d(2%, -2%, 0) scale(1.1); opacity: 0.9; }
+}
+
+/* Orbit logo (static) */
+.orbit-logo-static {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.orbit-planet {
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fde68a 0%, #f59e0b 55%, #a16207 100%);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.orbit-planet::after {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.orbit-rbit {
+  font-weight: 700;
+  font-size: 1.05em;
+  letter-spacing: 0.08em;
+  color: #e8e6e3;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .space-hero,
+  .space-hero::after {
+    animation: none;
+  }
+}
