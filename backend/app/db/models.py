@@ -92,3 +92,13 @@ class RubricScore(Base):
     overall_score = Column(String(16), nullable=True)  # e.g. "72", "B+"
     criteria_scores = Column(JSON, nullable=True)  # [{ "name": "...", "score": 8, "max": 10 }, ...]
     scored_at = Column(DateTime, default=datetime.utcnow)
+
+
+class SaturnDecisionPack(Base):
+    """Decision pack generated from the Saturn voice interview context."""
+    __tablename__ = "saturn_decision_packs"
+    id = Column(String(36), primary_key=True)
+    application_id = Column(String(36), ForeignKey("applications.id"), nullable=False, unique=True, index=True)
+    decision_json = Column(JSON, nullable=False)
+    transcript_text = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

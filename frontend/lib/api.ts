@@ -165,6 +165,33 @@ export async function sendChat(applicationId: string, message: string) {
   });
 }
 
+export async function createSaturnAnswer(applicationId: string, sdp: string) {
+  return request<{ answer_sdp: string }>("/saturn/webrtc", {
+    method: "POST",
+    body: JSON.stringify({ application_id: applicationId, sdp }),
+  });
+}
+
+export async function finalizeSaturnDecisionPack(applicationId: string, transcript?: string) {
+  return request<{ id: string; application_id: string; decision_json: Record<string, unknown> }>(
+    "/saturn/decision-pack",
+    {
+      method: "POST",
+      body: JSON.stringify({ application_id: applicationId, transcript }),
+    }
+  );
+}
+
+export async function getSaturnDecisionPack(applicationId: string) {
+  return request<{
+    id: string;
+    application_id: string;
+    decision_json: Record<string, unknown>;
+    transcript_text?: string | null;
+    created_at: string;
+  }>(`/saturn/decision-pack/${applicationId}`);
+}
+
 // Portfolio (recruiter)
 export interface Portfolio {
   id: string;

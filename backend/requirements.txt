@@ -12,3 +12,4 @@ pypdf>=4.0.0
 python-multipart>=0.0.6
 openai
 chromadb
+httpx

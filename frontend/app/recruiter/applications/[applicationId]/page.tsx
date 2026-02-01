@@ -12,6 +12,7 @@ import {
   getScore,
   calculateScore,
   getCvUrl,
+  getSaturnDecisionPack,
 } from "@/lib/api";
 import type { Application, Portfolio as PortfolioType, Evidence, RubricScore } from "@/lib/api";
 
@@ -35,6 +36,8 @@ export default function RecruiterApplicationPage() {
   const [portfolio, setPortfolio] = useState<PortfolioType | null>(null);
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [score, setScore] = useState<RubricScore | null>(null);
+  const [decisionPack, setDecisionPack] = useState<Record<string, unknown> | null>(null);
+  const [decisionTranscript, setDecisionTranscript] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [scoreLoading, setScoreLoading] = useState(false);
@@ -53,6 +56,15 @@ export default function RecruiterApplicationPage() {
           getPortfolio(applicationId).then(setPortfolio).catch(() => setPortfolio(null)),
           listEvidence(applicationId).then(setEvidence).catch(() => setEvidence([])),
           getScore(applicationId).then(setScore).catch(() => setScore(null)),
+          getSaturnDecisionPack(applicationId)
+            .then((pack) => {
+              setDecisionPack(pack.decision_json);
+              setDecisionTranscript(pack.transcript_text ?? null);
+            })
+            .catch(() => {
+              setDecisionPack(null);
+              setDecisionTranscript(null);
+            }),
         ]);
       })
       .catch(() => setError("Application not found."))
@@ -121,6 +133,16 @@ export default function RecruiterApplicationPage() {
       </main>
     );
   }
+
+  const decisionRecord = (decisionPack ?? {}) as Record<string, unknown>;
+  const decisionRecommendation =
+    typeof decisionRecord.overall_recommendation === "string"
+      ? decisionRecord.overall_recommendation
+      : "—";
+  const decisionScore =
+    typeof decisionRecord.overall_score === "string" ? decisionRecord.overall_score : "—";
+  const decisionRationale =
+    typeof decisionRecord.rationale === "string" ? decisionRecord.rationale : "";
 
   return (
     <main className="min-h-screen p-6 bg-[#0a0a0f] text-[#e8e6e3]">
@@ -291,6 +313,65 @@ export default function RecruiterApplicationPage() {
                 {scoreLoading ? "Calculating…" : "Calculate score"}
               </button>
             </div>
+          )}
+        </section>
+
+        {/* Decision Pack */}
+        <section className="mb-8 rounded-xl border border-[#e8e6e3]/20 bg-[#1e1b4b]/30 p-6">
+          <h2 className="text-lg font-semibold text-[#22d3ee] mb-3">Saturn Decision Pack</h2>
+          {decisionPack ? (
+            <div className="space-y-3 text-sm">
+              <p className="text-[#e8e6e3]/80">
+                Recommendation:{" "}
+                <span className="text-[#22c55e] font-semibold">
+                  {decisionRecommendation}
+                </span>
+              </p>
+              <p className="text-[#e8e6e3]/80">
+                Overall score:{" "}
+                <span className="text-[#22d3ee] font-semibold">
+                  {decisionScore}
+                </span>
+              </p>
+              {decisionRationale && (
+                <div className="rounded-lg border border-[#e8e6e3]/10 bg-[#0a0a0f]/50 p-3 text-[#e8e6e3]/80">
+                  {decisionRationale}
+                </div>
+              )}
+              {Array.isArray((decisionPack as Record<string, unknown>).strengths) && (
+                <div>
+                  <p className="text-[#e8e6e3]/70 mb-1">Strengths</p>
+                  <ul className="list-disc list-inside text-[#e8e6e3]/80">
+                    {((decisionPack as Record<string, unknown>).strengths as string[]).map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {Array.isArray((decisionPack as Record<string, unknown>).risks) && (
+                <div>
+                  <p className="text-[#e8e6e3]/70 mb-1">Risks</p>
+                  <ul className="list-disc list-inside text-[#e8e6e3]/80">
+                    {((decisionPack as Record<string, unknown>).risks as string[]).map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {decisionTranscript ? (
+                <div className="rounded-lg border border-[#e8e6e3]/10 bg-[#0a0a0f]/50 p-3 text-[#e8e6e3]/80 whitespace-pre-wrap">
+                  {decisionTranscript}
+                </div>
+              ) : (
+                <p className="text-[#e8e6e3]/60 text-xs">
+                  No transcript captured. The interview may not have emitted transcript events.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-[#e8e6e3]/60 text-sm">
+              No Decision Pack yet. It is created automatically when the candidate ends the Saturn voice interview.
+            </p>
           )}
         </section>
       </div>

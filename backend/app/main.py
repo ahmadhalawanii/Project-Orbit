@@ -44,6 +44,11 @@ def init_db_and_seed() -> None:
             if "cv_extracted_text" not in cols:
                 conn.execute(text("ALTER TABLE applications ADD COLUMN cv_extracted_text TEXT"))
                 conn.commit()
+            r = conn.execute(text("PRAGMA table_info(saturn_decision_packs)"))
+            saturn_cols = [row[1] for row in r]
+            if "transcript_text" not in saturn_cols:
+                conn.execute(text("ALTER TABLE saturn_decision_packs ADD COLUMN transcript_text TEXT"))
+                conn.commit()
 
     with Session(engine) as session:
         existing = session.execute(select(MissionPack).limit(1)).scalar_one_or_none()
