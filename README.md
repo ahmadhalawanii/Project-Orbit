@@ -1,38 +1,101 @@
 # Project Orbit
 
-Space-themed conversational hiring experience with RAG, Living Portfolio, Mission Packs, and AI interview.
+Project Orbit is a space-themed hiring platform with an AI-enabled FastAPI backend and a Next.js frontend.
 
-## Stack
-- **Frontend:** Next.js (App Router) + Tailwind
-- **Backend:** FastAPI (Python)
-- **DB:** SQLite (local)
-- **Vector:** Chroma (PersistentClient)
+## Prerequisites
 
-## Repo layout
-- `frontend/` contains the living-portfolio UI (used by `docker-compose.yml`).
-- `backend/` contains the integrated AI agent backend.
-- `apps/web/` contains an additional UI demo.
+- Docker Desktop (Docker Engine + Docker Compose)
+- Git
+- Optional (for non-Docker run): Python 3.11+, Node.js 20+, npm
 
-## Quick start (Docker)
-1) Copy `.env.example` to `.env` and fill values if needed.
-2) Start services:
-   - `docker compose up --build`
+## Environment Setup
 
-- API: http://localhost:8001  
-- Web: http://localhost:3001  
+Primary Docker run uses `backend/.env` (via `docker-compose.yml`).
 
-## Local dev (optional)
-Backend:
-- `cd services/api`
-- `python -m venv .venv`
-- `./.venv/Scripts/Activate.ps1`
-- `pip install -r requirements.txt`
-- `uvicorn main:app --reload --host 0.0.0.0 --port 8000`
+### 1) Create env file
 
-Frontend:
-- `cd apps/web`
-- `npm install`
-- `npm run dev -- --hostname 0.0.0.0 --port 3000`
+Git Bash:
 
-## Secrets
-- Never commit `.env`. Use `.env.example` as a template.
+```bash
+cp backend/.env.example backend/.env
+```
+
+PowerShell:
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
+
+### 2) Required/available variables in `backend/.env.example`
+
+- `DATABASE_URL` (optional): database connection string for backend.
+- `SECRET_KEY`: app auth/signing secret (change in production).
+- `OPENAI_API_KEY` (recommended): OpenAI key for real AI responses.
+- `MOCK_AI`: `true` uses mock AI responses; `false` uses OpenAI.
+- `CORS_ORIGINS` (optional): allowed frontend origins.
+
+Note: in Docker, `DATABASE_URL` is set by `docker-compose.yml` to `sqlite+aiosqlite:///./data/orbit.db`.
+
+## Run With Docker (Primary)
+
+From repo root:
+
+```bash
+docker compose up -d --build
+```
+
+App URLs:
+
+- Web: `http://localhost:3001`
+- API health: `http://localhost:8001/health`
+
+Stop services:
+
+```bash
+docker compose down
+```
+
+Reset local runtime data (optional, destructive to local DB/vector/uploads):
+
+```bash
+docker compose down
+rm -rf data uploads
+```
+
+PowerShell equivalent:
+
+```powershell
+docker compose down
+Remove-Item -Recurse -Force .\data, .\uploads
+```
+
+## Run Without Docker (Optional)
+
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+```
+
+Activate and install:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+npm run dev -- --hostname 0.0.0.0 --port 3000
+```
+
+## Common Issues
+
+- Missing `OPENAI_API_KEY`: set key in `backend/.env` or keep `MOCK_AI=true`.
+- Port already in use: change host ports in `docker-compose.yml` or free ports 3001/8001.
+- Docker not running: start Docker Desktop, then rerun `docker compose up -d --build`.
