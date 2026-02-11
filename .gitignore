@@ -27,8 +27,6 @@ chroma_db/
 data/
 friend-repo/
 friend-repo-src/
-ahmeds-code/frontend/node_modules/
-ahmeds-code/frontend/.next/
 apps/web/node_modules/
 apps/web/.next/
 **/__pycache__/

@@ -30,7 +30,7 @@ Copy-Item backend/.env.example backend/.env
 
 - `DATABASE_URL` (optional): database connection string for backend.
 - `SECRET_KEY`: app auth/signing secret (change in production).
-- `OPENAI_API_KEY` (recommended): OpenAI key for real AI responses.
+- `OPENAI_API_KEY` (recommended | Paid API Key): OpenAI key for real AI responses.
 - `MOCK_AI`: `true` uses mock AI responses; `false` uses OpenAI.
 - `CORS_ORIGINS` (optional): allowed frontend origins.
 
@@ -96,6 +96,6 @@ npm run dev -- --hostname 0.0.0.0 --port 3000
 
 ## Common Issues
 
-- Missing `OPENAI_API_KEY`: set key in `backend/.env` or keep `MOCK_AI=true`.
+- Missing `OPENAI_API_KEY (Paid)`: set key in `backend/.env` or keep `MOCK_AI=true`.
 - Port already in use: change host ports in `docker-compose.yml` or free ports 3001/8001.
 - Docker not running: start Docker Desktop, then rerun `docker compose up -d --build`.

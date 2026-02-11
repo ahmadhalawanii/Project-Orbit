@@ -22,6 +22,8 @@ export function SaturnVoiceInterview({ applicationId, onEnded }: SaturnVoiceInte
     return () => {
       stop();
     };
+    // We intentionally run this cleanup only on unmount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function start() {

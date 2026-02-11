@@ -1,4 +1,6 @@
 import uuid
+import shutil
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +30,13 @@ app.include_router(api_router, prefix="/api")
 @app.on_event("startup")
 def init_db_and_seed() -> None:
     settings = get_settings()
+    # One-time safe migration for renamed local SQLite file.
+    legacy_db = Path("data/friend-orbit.db")
+    current_db = Path("data/orbit.db")
+    if not current_db.exists() and legacy_db.exists():
+        current_db.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(legacy_db, current_db)
+
     engine = create_engine(
         settings.get_database_url_sync(),
         connect_args={"check_same_thread": False},
